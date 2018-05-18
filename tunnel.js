@@ -26,9 +26,9 @@ function IfReq (name) {
 }
 
 async function open (name) {
-  let [err, fd] = await fsopen('/dev/net/tun', c.O_RDWR)
+  let [err, fd] = await fsopen('/dev/net/tun', "r+")
   if (err) {
-    return [err]
+    return [`error open tun: ${err}`]
   }
   ifreq = IfReq(name);
   let res = libsys.syscall(SYS_IOCTL, fd, TUNSETIFF, ifreq)
@@ -39,14 +39,10 @@ async function open (name) {
 }
 
 async function read(fd, callback) {
-  function recursiveRead(){
-    packet = Buffer.alloc(1500);
-    fs.read(fd, packet, 0, 1500, null, (err, len) => {
-      callback(err, packet)
-      recursiveRead()
-    })
-  }
-  recursiveRead();
+  const stream = fs.createReadStream(null, { fd: fd })
+    stream.on('data', data => {
+    callback(null, data)
+  })
 }
 
 async function write(fd, buf) {

@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bunyan": "^1.8.12",
     "ioctl": "^2.0.1",
     "libsys": "^2.2.2"
   }

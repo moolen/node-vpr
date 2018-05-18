@@ -1,0 +1,106 @@
+version: '3.6'
+
+services:
+  #
+  #  BERLIN BOX
+  #
+  berlin-box:
+    cap_add:
+      - NET_ADMIN
+    networks:
+      berlin:
+        ipv4_address: ${BERLIN_BOX}
+    image: alpine
+    volumes:
+      - type: bind
+        source: ./entrypoint-box.sh
+        target: /entrypoint-box.sh
+    environment:
+      SITE_EDGE: ${BERLIN_EDGE_TAP}
+      REMOTE_BOX: ${HAMBURG_BOX}
+    entrypoint: "/entrypoint-box.sh"
+  #
+  # BERLIN EDGE
+  #
+  berlin-edge:
+    networks:
+      berlin:
+        ipv4_address: ${BERLIN_EDGE}
+      transit:
+        ipv4_address: ${TRANSIT_BERLIN}
+    cap_add:
+      - NET_ADMIN
+    environment:
+      LOCAL_ADDR: ${BERLIN_EDGE_TAP}
+      REMOTE_ADDR: ${TRANSIT_HAMBURG}
+      REMOTE_NET: ${HAMBURG_NET}
+      INSPECT_PORT: 9230
+      LOG_LEVEL: debug
+      MTU: 48000
+      KEY: 1234123412341234
+    ports:
+      - "9230:9230"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: berlin-edge
+  #
+  # HAMBURG-BOX
+  #
+  hamburg-box:
+    cap_add:
+      - NET_ADMIN
+    networks:
+      hamburg:
+        ipv4_address: ${HAMBURG_BOX}
+    image: alpine
+    volumes:
+      - type: bind
+        source: ./entrypoint-box.sh
+        target: /entrypoint-box.sh
+    environment:
+      SITE_EDGE: ${HAMBURG_EDGE_TAP}
+      REMOTE_BOX: ${BERLIN_BOX}
+    entrypoint: "/entrypoint-box.sh"
+  #
+  # HAMBURG-EDGE
+  #
+  hamburg-edge:
+    networks:
+      hamburg:
+        ipv4_address: ${HAMBURG_EDGE}
+      transit:
+        ipv4_address: ${TRANSIT_HAMBURG}
+    cap_add:
+      - NET_ADMIN
+    environment:
+      LOCAL_ADDR: ${HAMBURG_EDGE_TAP}
+      REMOTE_ADDR: ${TRANSIT_BERLIN}
+      REMOTE_NET: ${BERLIN_NET}
+      INSPECT_PORT: 9229
+      LOG_LEVEL: debug
+      MTU: 48000
+      KEY: 1234123412341234
+    ports:
+      - "9229:9229"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: hamburg-edge
+
+networks:
+  berlin:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${BERLIN_NET}
+  hamburg:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${HAMBURG_NET}
+  transit:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${TRANSIT_NET}
