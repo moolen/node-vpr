@@ -20,8 +20,21 @@ const server = dgram.createSocket('udp4');
 let fd;
 
 // todo: naming
-const encrypt = crypto.encrypt(KEY)
-const decrypt = crypto.decrypt(KEY)
+let identity = x => x
+let encrypt = crypto.encrypt(KEY)
+let decrypt = crypto.decrypt(KEY)
+
+process.on('SIGUSR1', () => {
+  log.info('SIGUSR1: disable encryption')
+  encrypt = identity
+  decrypt = identity
+})
+
+process.on('SIGUSR2', () => {
+  log.info('SIGUSR2: enable encryption')
+  encrypt = crypto.encrypt(KEY)
+  decrypt = crypto.decrypt(KEY)
+})
 
 async function initTunDevice() {
   [err, fd] = await tun.open(DEV_NAME);
@@ -39,7 +52,6 @@ async function initTunDevice() {
       log.fatal(`error reading from tun: ${err}`);
       return
     }
-    console.log(pkg)
     const enc = encrypt(pkg)
     server.send(enc, REMOTE_PORT, REMOTE_ADDR, err => {
       if (err) {
@@ -58,12 +70,17 @@ async function initUdpServer() {
 
   server.on('message', (msg, info) => {
     log.info(`UDP RECV from ${info.address}:${info.port}`);
-    let dec = decrypt(msg)
+    let dec
+    try {
+      dec = decrypt(msg)
+    }catch(e){
+      log.warn(`could not decrypt packet: ${e}`)
+      return
+    }
     if (dec == "HELLO") {
       log.debug(`HELLO from ${info.address}:${info.port}`)
       return
     }
-    console.log(dec)
     tun.write(fd, dec)
   });
 

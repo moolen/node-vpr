@@ -35,8 +35,7 @@ services:
       REMOTE_ADDR: ${TRANSIT_HAMBURG}
       REMOTE_NET: ${HAMBURG_NET}
       INSPECT_PORT: 9230
-      LOG_LEVEL: debug
-      MTU: 48000
+      LOG_LEVEL: warn
       KEY: 1234123412341234
     ports:
       - "9230:9230"
@@ -78,8 +77,7 @@ services:
       REMOTE_ADDR: ${TRANSIT_BERLIN}
       REMOTE_NET: ${BERLIN_NET}
       INSPECT_PORT: 9229
-      LOG_LEVEL: debug
-      MTU: 48000
+      LOG_LEVEL: warn
       KEY: 1234123412341234
     ports:
       - "9229:9229"

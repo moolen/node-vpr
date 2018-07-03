@@ -18,7 +18,7 @@ const TUNSETIFF = 0x400454ca;
 // ifname: 16b
 // flag: 4b
 // pad: 12b
-function IfReq (name) {
+function ioctlTunnelPayload(name) {
   ifreq = Buffer.alloc(32);
   ifreq.write(name.slice(0,9), 0);
   ifreq.writeUInt16LE(0x0001|0x1000, 16)
@@ -26,11 +26,11 @@ function IfReq (name) {
 }
 
 async function open (name) {
-  let [err, fd] = await fsopen('/dev/net/tun', "r+")
+  let [err, fd] = await fsopen('/dev/net/tun', 'r+')
   if (err) {
     return [`error open tun: ${err}`]
   }
-  ifreq = IfReq(name);
+  ifreq = ioctlTunnelPayload(name);
   let res = libsys.syscall(SYS_IOCTL, fd, TUNSETIFF, ifreq)
   if (res != 0) {
     return [new Error(`error creating tun: ${res}`)];
